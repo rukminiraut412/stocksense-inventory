@@ -206,3 +206,77 @@ export const receiptsAPI = {
     apiRequest<Receipt>(`/receipts/${id}/validate`, { method: "POST" }, token),
 };
 
+export interface Warehouse {
+  id: number;
+  code: string;
+  name: string;
+  location?: string | null;
+}
+
+export interface RecordedStock {
+  product_id: number;
+  product_name: string;
+  product_sku: string;
+  warehouse_id: number;
+  warehouse_name: string;
+  recorded_quantity: number;
+}
+
+export interface Adjustment {
+  id: number;
+  reference_id: string;
+  product_id: number;
+  product_name?: string;
+  product_sku?: string;
+  warehouse_id: number;
+  warehouse_name?: string;
+  recorded_quantity: number;
+  previous_quantity: number;
+  physical_quantity: number;
+  counted_quantity: number;
+  difference: number;
+  reason?: string;
+  status: string;
+  created_by?: string;
+  created_at?: string;
+}
+
+export interface AdjustmentCreate {
+  product_id: number;
+  warehouse_id: number;
+  counted_quantity: number;
+  reason?: string;
+  user?: string;
+}
+
+export const warehousesAPI = {
+  list: (token?: string | null) =>
+    apiRequest<Warehouse[]>("/warehouses", { method: "GET" }, token),
+};
+
+export const adjustmentsAPI = {
+  getRecordedStock: (productId: number, warehouseId: number, token?: string | null) =>
+    apiRequest<RecordedStock>(
+      `/adjustments/recorded-stock?productId=${productId}&warehouseId=${warehouseId}`,
+      { method: "GET" },
+      token
+    ),
+  create: (payload: AdjustmentCreate, token?: string | null) =>
+    apiRequest<Adjustment>(
+      "/adjustments",
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+      token
+    ),
+  list: (productId?: number, warehouseId?: number, token?: string | null) => {
+    let q = "";
+    const params = new URLSearchParams();
+    if (productId) params.append("productId", String(productId));
+    if (warehouseId) params.append("warehouseId", String(warehouseId));
+    if (params.toString()) q = `?${params.toString()}`;
+    return apiRequest<Adjustment[]>(`/adjustments${q}`, { method: "GET" }, token);
+  },
+};
+

@@ -127,6 +127,7 @@ def get_receipt(receipt_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/{receipt_id}/validate", response_model=ReceiptResponse)
+@router.post("/{receipt_id}/receive", response_model=ReceiptResponse)
 def validate_receipt(receipt_id: int, db: Session = Depends(get_db)):
     """
     Validate a receipt:

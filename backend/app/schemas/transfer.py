@@ -27,8 +27,6 @@ class TransferCreate(BaseModel):
             raise ValueError("Either source_warehouse_id or source_location_id is required.")
         if not dst:
             raise ValueError("Either destination_warehouse_id or destination_location_id is required.")
-        if src == dst:
-            raise ValueError("Source and destination warehouses cannot be the same.")
         return self
 
     def get_source_id(self) -> int:

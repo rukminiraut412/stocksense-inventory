@@ -37,11 +37,13 @@ class DeliveryCreate(BaseModel):
 
 
 class DeliveryStatusUpdate(BaseModel):
-    status: str = Field(..., description="Target status: PICKED or PACKED")
+    status: Optional[str] = Field(default=None, description="Target status: PICKED or PACKED")
 
     @field_validator("status")
     @classmethod
-    def valid_manual_status(cls, v: str) -> str:
+    def valid_manual_status(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
         allowed = {"PICKED", "PACKED"}
         if v not in allowed:
             raise ValueError(f"Manual status update only allows: {allowed}")
