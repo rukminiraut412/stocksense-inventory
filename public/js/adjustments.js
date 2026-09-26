@@ -43,13 +43,24 @@ const AdjustmentsUI = {
     // Modal close
     const modalClose = document.getElementById('adj-modal-close');
     const modalOverlay = document.getElementById('adj-details-modal');
+    const closeModal = () => {
+      modalOverlay.classList.remove('open');
+      if (window.location.pathname.startsWith('/adjustments/')) {
+        window.history.pushState(null, '', '/adjustments');
+      }
+    };
+
     if (modalClose && modalOverlay) {
-      modalClose.addEventListener('click', () => {
-        modalOverlay.classList.remove('open');
-      });
+      modalClose.addEventListener('click', closeModal);
       modalOverlay.addEventListener('click', (e) => {
-        if (e.target === modalOverlay) {
-          modalOverlay.classList.remove('open');
+        if (e.target === modalOverlay) closeModal();
+      });
+    }
+
+    if (physicalInput) {
+      physicalInput.addEventListener('focus', () => {
+        if (window.location.pathname !== '/adjustments/new' && !window.location.pathname.startsWith('/adjustments/')) {
+          window.history.pushState(null, '', '/adjustments/new');
         }
       });
     }
@@ -268,13 +279,17 @@ const AdjustmentsUI = {
     }
   },
 
-  async showDetails(id) {
+  async showDetails(id, updateUrl = true) {
     const modal = document.getElementById('adj-details-modal');
     if (!modal) return;
 
     try {
       const res = await API.getAdjustmentById(id);
       const adj = res.data;
+
+      if (updateUrl) {
+        window.history.pushState(null, '', `/adjustments/${id}`);
+      }
 
       document.getElementById('modal-ref').textContent = adj.referenceId;
       document.getElementById('modal-product').textContent = `${adj.productName} (${adj.sku})`;

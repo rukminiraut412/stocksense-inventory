@@ -44,13 +44,15 @@ class AdjustmentService {
    * @param {number} params.physicalQuantity
    * @param {string} [params.reason]
    * @param {string} [params.user]
+   * @param {string} [params.clientReference] - Optional idempotency key
    */
   static applyAdjustment({
     productId,
     warehouseId,
     physicalQuantity,
     reason = '',
-    user = 'Inventory Specialist'
+    user = 'Inventory Specialist',
+    clientReference = null
   }) {
     const pId = Number(productId);
     const wId = Number(warehouseId);
@@ -67,6 +69,16 @@ class AdjustmentService {
       const err = new Error('Product ID and Warehouse ID are required');
       err.statusCode = 400;
       throw err;
+    }
+
+    // Rule: Duplicate application prevention via clientReference / idempotencyKey
+    if (clientReference) {
+      const existing = db.prepare('SELECT id, status FROM adjustments WHERE client_reference = ?').get(clientReference);
+      if (existing) {
+        const err = new Error(`Adjustment with reference '${clientReference}' has already been applied. Duplicate application is not allowed.`);
+        err.statusCode = 400;
+        throw err;
+      }
     }
 
     // Begin atomic transaction
@@ -113,8 +125,9 @@ class AdjustmentService {
           reason,
           status,
           created_by,
+          client_reference,
           created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, 'APPLIED', ?, datetime('now'))
+        ) VALUES (?, ?, ?, ?, ?, ?, 'APPLIED', ?, ?, datetime('now'))
       `);
 
       const adjResult = insertAdjStmt.run(
@@ -124,7 +137,8 @@ class AdjustmentService {
         physicalQty,
         difference,
         reason || 'Physical Count Reconciliation',
-        user
+        user,
+        clientReference
       );
 
       const adjustmentId = Number(adjResult.lastInsertRowid);
@@ -143,6 +157,15 @@ class AdjustmentService {
           VALUES (?, ?, ?, datetime('now'))
         `).run(pId, wId, newStock);
       }
+
+      // Synchronize product-level current_stock for full cross-module consistency
+      const totalStockRow = db.prepare('SELECT SUM(quantity) as total FROM stock_levels WHERE product_id = ?').get(pId);
+      const totalStock = totalStockRow ? totalStockRow.total : newStock;
+      db.prepare(`
+        UPDATE products 
+        SET current_stock = ?, updated_at = datetime('now') 
+        WHERE id = ?
+      `).run(totalStock, pId);
 
       // Rule 4: Traceable movement recorded directly into the stock ledger
       const ledgerEntry = LedgerService.recordMovement({
@@ -180,6 +203,34 @@ class AdjustmentService {
       db.exec('ROLLBACK');
       throw error;
     }
+  }
+
+  /**
+   * Apply an existing adjustment record by ID
+   * Strict Rule: Adjustment cannot accidentally be applied twice
+   */
+  static applyAdjustmentById(id) {
+    const adj = db.prepare('SELECT * FROM adjustments WHERE id = ?').get(Number(id));
+    if (!adj) {
+      const err = new Error(`Adjustment with ID ${id} not found`);
+      err.statusCode = 404;
+      throw err;
+    }
+
+    if (adj.status === 'APPLIED') {
+      const err = new Error(`Adjustment ADJ-${adj.id.toString().padStart(4, '0')} has already been applied. Duplicate application is not allowed.`);
+      err.statusCode = 400;
+      throw err;
+    }
+
+    // If it were a draft, apply it
+    return this.applyAdjustment({
+      productId: adj.product_id,
+      warehouseId: adj.warehouse_id,
+      physicalQuantity: adj.physical_quantity,
+      reason: adj.reason,
+      user: adj.created_by
+    });
   }
 
   /**

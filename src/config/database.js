@@ -24,8 +24,12 @@ function initializeDatabase() {
       sku TEXT UNIQUE NOT NULL,
       name TEXT NOT NULL,
       category TEXT,
+      unit_of_measure TEXT DEFAULT 'pcs',
       reorder_threshold INTEGER NOT NULL DEFAULT 10,
-      created_at TEXT DEFAULT (datetime('now'))
+      current_stock REAL DEFAULT 0.0,
+      initial_stock REAL DEFAULT 0.0,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS warehouses (
@@ -80,6 +84,13 @@ function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_ledger_timestamp ON stock_ledger(timestamp);
     CREATE INDEX IF NOT EXISTS idx_adjustments_product ON adjustments(product_id);
   `);
+
+  // Ensure backward/forward compatibility migrations if table already exists
+  try { db.exec(`ALTER TABLE products ADD COLUMN unit_of_measure TEXT DEFAULT 'pcs'`); } catch (e) {}
+  try { db.exec(`ALTER TABLE products ADD COLUMN current_stock REAL DEFAULT 0.0`); } catch (e) {}
+  try { db.exec(`ALTER TABLE products ADD COLUMN initial_stock REAL DEFAULT 0.0`); } catch (e) {}
+  try { db.exec(`ALTER TABLE products ADD COLUMN updated_at TEXT`); } catch (e) {}
+  try { db.exec(`ALTER TABLE adjustments ADD COLUMN client_reference TEXT`); } catch (e) {}
 
   // Seed baseline data if tables are brand new, ensuring test cases can run immediately
   const productCount = db.prepare('SELECT COUNT(*) as count FROM products').get().count;

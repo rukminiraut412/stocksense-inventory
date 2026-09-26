@@ -37,6 +37,12 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Frontend Page Routes (SPA routing support)
+const indexPath = path.join(__dirname, '..', 'public', 'index.html');
+app.get(['/adjustments', '/adjustments/new', '/adjustments/:id', '/move-history', '/low-stock'], (req, res) => {
+  res.sendFile(indexPath);
+});
+
 // Fallback 404 handler for API
 app.use('/api', (req, res) => {
   res.status(404).json({ success: false, error: 'Endpoint not found' });

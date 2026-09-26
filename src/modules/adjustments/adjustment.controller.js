@@ -109,7 +109,33 @@ class AdjustmentController {
         data: adjustment
       });
     } catch (error) {
-      console.error('[AdjustmentController.getAdjustmentById] Error:', error);
+      if (!error.statusCode || error.statusCode >= 500) {
+        console.error('[AdjustmentController.getAdjustmentById] Error:', error);
+      }
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
+
+  /**
+   * POST /api/adjustments/:id/apply
+   * Rejects duplicate application if already APPLIED
+   */
+  static applyAdjustmentById(req, res) {
+    try {
+      const { id } = req.params;
+      const result = AdjustmentService.applyAdjustmentById(id);
+      return res.status(200).json({
+        success: true,
+        message: 'Adjustment applied successfully',
+        data: result
+      });
+    } catch (error) {
+      if (!error.statusCode || error.statusCode >= 500) {
+        console.error('[AdjustmentController.applyAdjustmentById] Error:', error);
+      }
       return res.status(error.statusCode || 500).json({
         success: false,
         error: error.message

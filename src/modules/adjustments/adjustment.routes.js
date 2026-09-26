@@ -14,4 +14,7 @@ router.get('/', AdjustmentController.getAdjustments);
 // GET adjustment details by ID
 router.get('/:id', AdjustmentController.getAdjustmentById);
 
+// POST apply existing adjustment by ID (enforces duplicate application prevention)
+router.post('/:id/apply', AdjustmentController.applyAdjustmentById);
+
 module.exports = router;
