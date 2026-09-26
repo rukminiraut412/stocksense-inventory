@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Create Transfer{% endblock %}
+{% block content %}
+<div class="max-w-xl mx-auto">
+  <h1 class="text-2xl font-bold text-gray-800 mb-6">New Internal Transfer</h1>
+  <div id="alert" class="hidden mb-4 px-4 py-3 rounded border text-sm"></div>
+
+  <form id="transferForm" class="bg-white rounded-lg shadow p-6 space-y-5">
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Product</label>
+      <select id="productId" class="w-full border rounded px-3 py-2 text-sm" required>
+        <option value="">Select product…</option>
+      </select>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Source Location</label>
+        <select id="srcLocation" class="w-full border rounded px-3 py-2 text-sm" required>
+          <option value="">Select source…</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Destination Location</label>
+        <select id="dstLocation" class="w-full border rounded px-3 py-2 text-sm" required>
+          <option value="">Select destination…</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+      <input id="quantity" type="number" min="0.01" step="0.01" placeholder="Enter quantity"
+             class="w-full border rounded px-3 py-2 text-sm" required />
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+      <textarea id="notes" rows="2" placeholder="Optional"
+                class="w-full border rounded px-3 py-2 text-sm"></textarea>
+    </div>
+
+    <div class="flex gap-3 pt-2">
+      <button type="submit"
+              class="bg-teal-600 text-white px-5 py-2 rounded-lg hover:bg-teal-700 font-semibold text-sm">
+        Create Transfer
+      </button>
+      <a href="/transfers" class="text-gray-500 text-sm self-center hover:underline">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  async function init() {
+    try {
+      const [products, locations] = await Promise.all([
+        apiFetch("/api/products"),
+        apiFetch("/api/locations"),
+      ]);
+
+      const pSel = document.getElementById("productId");
+      products.forEach(p => {
+        const o = new Option(`${p.name} (${p.sku}) – Total Stock: ${p.current_stock}`, p.id);
+        pSel.add(o);
+      });
+
+      [document.getElementById("srcLocation"), document.getElementById("dstLocation")].forEach(sel => {
+        locations.forEach(l => {
+          const o = new Option(`${l.warehouse} / ${l.name}`, l.id);
+          sel.add(o);
+        });
+      });
+    } catch (e) {
+      showAlert(e.message);
+    }
+  }
+
+  document.getElementById("transferForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const src = parseInt(document.getElementById("srcLocation").value);
+    const dst = parseInt(document.getElementById("dstLocation").value);
+    if (src === dst) {
+      showAlert("Source and destination cannot be the same location.");
+      return;
+    }
+    try {
+      const transfer = await apiFetch("/api/transfers", {
+        method: "POST",
+        body: JSON.stringify({
+          product_id: parseInt(document.getElementById("productId").value),
+          source_location_id: src,
+          destination_location_id: dst,
+          quantity: parseFloat(document.getElementById("quantity").value),
+          notes: document.getElementById("notes").value,
+        }),
+      });
+      window.location.href = `/transfers/${transfer.id}`;
+    } catch (e) {
+      showAlert(e.message);
+    }
+  });
+
+  init();
+</script>
+{% endblock %}

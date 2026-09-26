@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}StockSense{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .status-DRAFT    { @apply bg-gray-100 text-gray-700; }
+    .status-PICKED   { @apply bg-yellow-100 text-yellow-700; }
+    .status-PACKED   { @apply bg-blue-100 text-blue-700; }
+    .status-VALIDATED{ @apply bg-green-100 text-green-700; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <!-- Navbar -->
+  <nav class="bg-indigo-700 text-white px-6 py-3 flex items-center gap-6 shadow">
+    <a href="/" class="text-lg font-bold tracking-wide">📦 StockSense</a>
+    <a href="/deliveries" class="hover:underline">Delivery Orders</a>
+    <a href="/transfers" class="hover:underline">Internal Transfers</a>
+  </nav>
+
+  <main class="max-w-6xl mx-auto px-4 py-8">
+    {% block content %}{% endblock %}
+  </main>
+
+  <script>
+    // Global helpers
+    async function apiFetch(url, options = {}) {
+      const res = await fetch(url, {
+        headers: { "Content-Type": "application/json" },
+        ...options,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Request failed");
+      return data;
+    }
+
+    function statusBadge(status) {
+      const colors = {
+        DRAFT: "bg-gray-100 text-gray-700",
+        PICKED: "bg-yellow-100 text-yellow-800",
+        PACKED: "bg-blue-100 text-blue-800",
+        VALIDATED: "bg-green-100 text-green-800",
+      };
+      return `<span class="px-2 py-1 rounded text-xs font-semibold ${colors[status] || ""}">${status}</span>`;
+    }
+
+    function showAlert(msg, type = "error") {
+      const el = document.getElementById("alert");
+      if (!el) return;
+      el.className = `mb-4 px-4 py-3 rounded border text-sm ${
+        type === "error"
+          ? "bg-red-50 border-red-300 text-red-700"
+          : "bg-green-50 border-green-300 text-green-700"
+      }`;
+      el.textContent = msg;
+      el.classList.remove("hidden");
+      setTimeout(() => el.classList.add("hidden"), 6000);
+    }
+  </script>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>
