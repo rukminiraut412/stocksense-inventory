@@ -1,26 +1,6 @@
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.db
-*.sqlite3
-*.sqlite
-*.egg-info/
-dist/
-build/
+node_modules/
 .env
-.venv
-venv/
-env/
-
-# IDE
-.vscode/
-.idea/
-
-# OS
+*.log
 .DS_Store
-Thumbs.db
-
-# Test artifacts
-test_results.txt
+data/*.db-wal
+data/*.db-shm
