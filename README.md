@@ -20,7 +20,7 @@ Open **http://localhost:5000**
 
 ## Modules (Team Member 3)
 
-- **Delivery Orders** — DRAFT → PICKED → PACKED → VALIDATED workflow. Stock decrements only on validation.
+- **Delivery Orders** — DRAFT -> PICKED -> PACKED -> VALIDATED workflow. Stock decrements only on validation.
 - **Internal Transfers** — Atomic stock move between locations. Total company stock stays unchanged.
 
 ## API Documentation
