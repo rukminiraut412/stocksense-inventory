@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StockSense – Inventory Management System</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+  <!-- Top Navigation -->
+  <nav class="navbar">
+    <div class="brand">
+      <span class="brand-icon">📦</span>
+      <span>StockSense</span>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-tab="products-tab">Products</button>
+      <button class="nav-tab" data-tab="receipts-tab">Receipts</button>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="container">
+    <!-- Products Tab Pane -->
+    <section id="products-tab" class="tab-pane active">
+      <div class="card">
+        <div class="view-header">
+          <h2 class="view-title">Product Inventory</h2>
+          <div class="view-actions">
+            <div class="search-box">
+              <input type="text" id="product-search-input" placeholder="Search by SKU, name, or category...">
+            </div>
+            <button class="btn btn-secondary" id="product-clear-search-btn">Clear</button>
+            <button class="btn btn-primary" onclick="openAddProductModal()">+ Add Product</button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 70px;">ID</th>
+                <th style="width: 140px;">SKU</th>
+                <th>Product Name</th>
+                <th style="width: 150px;">Category</th>
+                <th style="width: 100px;">UOM</th>
+                <th style="width: 140px;">Current Stock</th>
+                <th style="width: 100px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="products-table-body">
+              <tr>
+                <td colspan="7" style="text-align: center; padding: 2rem;">Loading products...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Receipts Tab Pane -->
+    <section id="receipts-tab" class="tab-pane">
+      <div class="card">
+        <div class="view-header">
+          <h2 class="view-title">Goods Receipts</h2>
+          <div class="view-actions">
+            <button class="btn btn-primary" onclick="openCreateReceiptModal()">+ Create Receipt</button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 70px;">ID</th>
+                <th style="width: 180px;">Receipt Number</th>
+                <th>Supplier</th>
+                <th style="width: 120px;">Items Count</th>
+                <th style="width: 130px;">Status</th>
+                <th style="width: 170px;">Created Date</th>
+                <th style="width: 180px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="receipts-table-body">
+              <tr>
+                <td colspan="7" style="text-align: center; padding: 2rem;">Loading receipts...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Add Product Modal -->
+  <div id="add-product-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Add New Product</h3>
+        <button class="modal-close" onclick="closeAddProductModal()">&times;</button>
+      </div>
+      <form id="add-product-form" onsubmit="handleAddProductSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">SKU / Code *</label>
+            <input type="text" name="sku" class="form-control" placeholder="e.g. ELEC-001" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Product Name *</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. Wireless Mouse" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category *</label>
+            <input type="text" name="category" class="form-control" placeholder="e.g. Electronics" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Unit of Measure *</label>
+            <input type="text" name="unit_of_measure" class="form-control" placeholder="e.g. pcs, box, kg" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Initial Stock (Optional)</label>
+            <input type="number" name="initial_stock" class="form-control" min="0" step="any" value="0">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeAddProductModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Product Modal -->
+  <div id="edit-product-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Product</h3>
+        <button class="modal-close" onclick="closeEditProductModal()">&times;</button>
+      </div>
+      <form id="edit-product-form" onsubmit="handleEditProductSubmit(event)">
+        <input type="hidden" name="product_id">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">SKU / Code *</label>
+            <input type="text" name="sku" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Product Name *</label>
+            <input type="text" name="name" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category *</label>
+            <input type="text" name="category" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Unit of Measure *</label>
+            <input type="text" name="unit_of_measure" class="form-control" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeEditProductModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Receipt Modal Placeholder -->
+  <div id="create-receipt-modal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Goods Receipt</h3>
+        <button class="modal-close" onclick="closeCreateReceiptModal()">&times;</button>
+      </div>
+      <form id="create-receipt-form" onsubmit="handleCreateReceiptSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Supplier Name *</label>
+            <input type="text" name="supplier" class="form-control" placeholder="e.g. Apex Global Supply" required>
+          </div>
+          
+          <div style="margin-top: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <label class="form-label" style="margin-bottom: 0;">Receipt Line Items *</label>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="addReceiptItemRow()">+ Add Line</button>
+            </div>
+            <div id="receipt-items-container" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 250px; overflow-y: auto;">
+              <!-- Dynamic line items -->
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeCreateReceiptModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Draft Receipt</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Receipt Details Modal Placeholder -->
+  <div id="receipt-details-modal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="receipt-details-title">Receipt Details</h3>
+        <button class="modal-close" onclick="closeReceiptDetailsModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="receipt-details-meta" style="margin-bottom: 1rem; line-height: 1.6;">
+          <!-- Receipt metadata -->
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Product SKU</th>
+                <th>Product Name</th>
+                <th>Quantity Received</th>
+              </tr>
+            </thead>
+            <tbody id="receipt-details-items-body">
+              <!-- Item rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer" id="receipt-details-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeReceiptDetailsModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notification container -->
+  <div id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/products.js"></script>
+  <script src="/static/js/receipts.js"></script>
+  <script>
+    // Tab switching
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+
+        tab.classList.add('active');
+        const targetPane = document.getElementById(tab.getAttribute('data-tab'));
+        if (targetPane) targetPane.classList.add('active');
+
+        if (tab.getAttribute('data-tab') === 'products-tab') {
+          loadProducts();
+        } else if (tab.getAttribute('data-tab') === 'receipts-tab' && typeof loadReceipts === 'function') {
+          loadReceipts();
+        }
+      });
+    });
+
+    // Product search handlers
+    const searchInput = document.getElementById('product-search-input');
+    let searchTimeout = null;
+    searchInput.addEventListener('input', (e) => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        loadProducts(e.target.value);
+      }, 300);
+    });
+
+    document.getElementById('product-clear-search-btn').addEventListener('click', () => {
+      searchInput.value = '';
+      loadProducts('');
+    });
+
+    // Initial load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadProducts();
+    });
+  </script>
+</body>
+</html>
