@@ -31,6 +31,7 @@ from backend.app.routers.products import router as products_router
 from backend.app.routers.receipts import router as receipts_router
 from backend.app.routers.deliveries import router as deliveries_router
 from backend.app.routers.transfers import router as transfers_router
+from backend.app.routers.adjustments import router as adjustments_router
 from backend.app.api.v1.endpoints.auth import router as auth_router
 from backend.app.api.v1.endpoints.dashboard import router as dashboard_router
 
@@ -76,6 +77,7 @@ app.include_router(products_router)
 app.include_router(receipts_router)
 app.include_router(deliveries_router)   # Team Member 3
 app.include_router(transfers_router)    # Team Member 3
+app.include_router(adjustments_router)  # Stock Adjustment
 
 # Health checks
 @app.get("/health", tags=["Health"])
