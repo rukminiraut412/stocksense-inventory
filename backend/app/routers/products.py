@@ -39,9 +39,16 @@ def create_product(product_in: ProductCreate, db: Session = Depends(get_db)):
         current_stock=initial_stock,
         low_stock_threshold=low_stock_threshold
     )
-    db.add(product)
-    db.commit()
-    db.refresh(product)
+    try:
+        db.add(product)
+        db.commit()
+        db.refresh(product)
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create product: {str(exc)}"
+        )
     return product
 
 
@@ -123,8 +130,15 @@ def update_product(product_id: int, product_in: ProductUpdate, db: Session = Dep
     if product_in.low_stock_threshold is not None:
         product.low_stock_threshold = product_in.low_stock_threshold
 
-    db.commit()
-    db.refresh(product)
+    try:
+        db.commit()
+        db.refresh(product)
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update product: {str(exc)}"
+        )
     return product
 
 
@@ -137,6 +151,13 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Product with ID {product_id} not found."
         )
-    db.delete(product)
-    db.commit()
+    try:
+        db.delete(product)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete product: {str(exc)}"
+        )
     return {"detail": f"Product {product_id} deleted successfully."}

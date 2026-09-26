@@ -78,19 +78,26 @@ def create_receipt(receipt_in: ReceiptCreate, db: Session = Depends(get_db)):
         supplier=receipt_in.supplier,
         status="DRAFT"
     )
-    db.add(receipt)
-    db.flush()  # obtain receipt.id
+    try:
+        db.add(receipt)
+        db.flush()  # obtain receipt.id
 
-    for item in receipt_in.items:
-        db_item = ReceiptItem(
-            receipt_id=receipt.id,
-            product_id=item.product_id,
-            quantity=item.quantity
+        for item in receipt_in.items:
+            db_item = ReceiptItem(
+                receipt_id=receipt.id,
+                product_id=item.product_id,
+                quantity=item.quantity
+            )
+            db.add(db_item)
+
+        db.commit()
+        db.refresh(receipt)
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create receipt: {str(exc)}"
         )
-        db.add(db_item)
-
-    db.commit()
-    db.refresh(receipt)
     return format_receipt_response(receipt)
 
 
@@ -169,21 +176,32 @@ def validate_receipt(receipt_id: int, db: Session = Depends(get_db)):
             detail="Cannot validate a receipt with no items."
         )
 
-    # Perform stock increment within transaction
-    for item in receipt.items:
-        product = db.query(Product).filter(Product.id == item.product_id).first()
-        if not product:
-            db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Product with ID {item.product_id} no longer exists. Validation aborted."
-            )
-        # Increase current stock
-        product.current_stock += item.quantity
+    # Perform stock increment within transaction atomically
+    try:
+        for item in receipt.items:
+            product = db.query(Product).filter(Product.id == item.product_id).first()
+            if not product:
+                db.rollback()
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Product with ID {item.product_id} no longer exists. Validation aborted."
+                )
+            # Increase current stock
+            product.current_stock += item.quantity
 
-    receipt.status = "VALIDATED"
-    receipt.validated_at = utcnow()
+        receipt.status = "VALIDATED"
+        receipt.validated_at = utcnow()
 
-    db.commit()
+        db.commit()
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Validation failed due to database transaction error: {str(exc)}"
+        )
+
     db.refresh(receipt)
     return format_receipt_response(receipt)
