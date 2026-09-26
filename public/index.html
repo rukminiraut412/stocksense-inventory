@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StockSense – Intelligent Inventory Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- Header Bar -->
+  <header class="app-header">
+    <div class="brand-section">
+      <a href="#" class="brand-logo">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+          </svg>
+        </div>
+        <span class="brand-name">StockSense</span>
+      </a>
+      <span class="brand-tag">Member 4 &bull; Adjustments &amp; Ledger</span>
+    </div>
+
+    <div class="header-status">
+      <div class="status-indicator">
+        <span class="pulse-dot"></span>
+        <span>SQLite Persistent Engine Online</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="tabs-nav">
+    <button class="tab-btn active" data-tab="adjustments" id="tab-btn-adjustments">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+      </svg>
+      <span>Inventory Adjustments</span>
+    </button>
+    <button class="tab-btn" data-tab="ledger" id="tab-btn-ledger">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="8" y1="6" x2="21" y2="6"></line>
+        <line x1="8" y1="12" x2="21" y2="12"></line>
+        <line x1="8" y1="18" x2="21" y2="18"></line>
+        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+      </svg>
+      <span>Stock Ledger / Move History</span>
+    </button>
+    <button class="tab-btn" data-tab="lowstock" id="tab-btn-lowstock">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+        <line x1="12" y1="9" x2="12" y2="13"></line>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </svg>
+      <span>Low-Stock &amp; Dashboard Metrics</span>
+    </button>
+  </nav>
+
+  <!-- Main Content Area -->
+  <main class="main-content">
+    
+    <!-- TAB 1: INVENTORY ADJUSTMENTS -->
+    <section id="tab-adjustments" class="tab-pane active">
+      <div class="section-grid">
+        
+        <!-- Create Adjustment Form -->
+        <div class="panel-card glass">
+          <div class="panel-header">
+            <h3 class="panel-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="16"></line>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
+              </svg>
+              Physical Stock Reconciliation
+            </h3>
+          </div>
+
+          <form id="adjustment-form">
+            <!-- Select Product -->
+            <div class="form-group">
+              <label class="form-label" for="adj-product-select">Product <span class="req">*</span></label>
+              <select id="adj-product-select" class="form-select" required>
+                <option value="">Loading products...</option>
+              </select>
+            </div>
+
+            <!-- Select Warehouse -->
+            <div class="form-group">
+              <label class="form-label" for="adj-warehouse-select">Warehouse / Location <span class="req">*</span></label>
+              <select id="adj-warehouse-select" class="form-select" required>
+                <option value="">Loading locations...</option>
+              </select>
+            </div>
+
+            <!-- Current Recorded Stock (read-only display) -->
+            <div class="form-group">
+              <label class="form-label">Current Recorded Stock</label>
+              <div id="adj-recorded-display" style="padding: 0.7rem 0.9rem; background: rgba(0,0,0,0.25); border-radius: var(--radius-md); font-weight: 700; color: #cbd5e1; font-size: 1.05rem;">
+                -
+              </div>
+            </div>
+
+            <!-- Physical Counted Quantity -->
+            <div class="form-group">
+              <label class="form-label" for="adj-physical-input">Physical Counted Quantity <span class="req">*</span></label>
+              <input type="number" id="adj-physical-input" class="form-control" placeholder="Enter verified count (e.g. 94)" min="0" step="1" required>
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+                Must be an integer &ge; 0
+              </div>
+            </div>
+
+            <!-- Reason -->
+            <div class="form-group">
+              <label class="form-label" for="adj-reason-input">Adjustment Reason</label>
+              <input type="text" id="adj-reason-input" class="form-control" placeholder="e.g. Annual Audit, Damaged Units, Recount">
+            </div>
+
+            <!-- User -->
+            <div class="form-group">
+              <label class="form-label" for="adj-user-input">Auditor / User</label>
+              <input type="text" id="adj-user-input" class="form-control" value="Inventory Team Member 4">
+            </div>
+
+            <!-- Dynamic Live Calculation Preview -->
+            <div class="calc-preview-card">
+              <div class="calc-row">
+                <span style="color: var(--text-muted);">Calculated Difference:</span>
+                <span id="adj-calc-diff" class="calc-diff neutral">0</span>
+              </div>
+              <div class="calc-row highlight">
+                <span>New Recorded Stock:</span>
+                <span id="adj-calc-new" style="color: #6ee7b7;">-</span>
+              </div>
+            </div>
+
+            <button type="submit" id="adj-submit-btn" class="btn btn-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              Apply Adjustment
+            </button>
+          </form>
+        </div>
+
+        <!-- Adjustment List -->
+        <div class="panel-card glass" style="flex: 1;">
+          <div class="panel-header">
+            <h3 class="panel-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              Adjustment History &bull; <span id="adj-total-count" style="color: #a5b4fc;">0</span> Records
+            </h3>
+
+            <div style="width: 240px;">
+              <input type="text" id="adj-search-input" class="form-control" placeholder="Search adjustments...">
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ref ID</th>
+                  <th>Product</th>
+                  <th>Warehouse</th>
+                  <th>Previous</th>
+                  <th>Physical</th>
+                  <th>Difference</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="adj-table-body">
+                <!-- Loaded dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 2: STOCK LEDGER / MOVE HISTORY -->
+    <section id="tab-ledger" class="tab-pane">
+      
+      <!-- Metrics Bar -->
+      <div class="metrics-grid">
+        <div class="metric-card glass">
+          <div class="metric-info">
+            <h4>Total Ledger Moves</h4>
+            <div class="metric-value" id="metric-total-moves" style="color: #cbd5e1;">0</div>
+          </div>
+          <div class="metric-icon-box" style="background: rgba(255, 255, 255, 0.05); color: #cbd5e1;">
+            📜
+          </div>
+        </div>
+
+        <div class="metric-card glass">
+          <div class="metric-info">
+            <h4>Adjustments</h4>
+            <div class="metric-value" id="metric-adj-moves" style="color: #a5b4fc;">0</div>
+          </div>
+          <div class="metric-icon-box" style="background: rgba(99, 102, 241, 0.15); color: #a5b4fc;">
+            ⚖️
+          </div>
+        </div>
+
+        <div class="metric-card glass">
+          <div class="metric-info">
+            <h4>Receipts (In)</h4>
+            <div class="metric-value" id="metric-rec-moves" style="color: #6ee7b7;">0</div>
+          </div>
+          <div class="metric-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #6ee7b7;">
+            📥
+          </div>
+        </div>
+
+        <div class="metric-card glass">
+          <div class="metric-info">
+            <h4>Deliveries (Out)</h4>
+            <div class="metric-value" id="metric-del-moves" style="color: #fca5a5;">0</div>
+          </div>
+          <div class="metric-icon-box" style="background: rgba(239, 68, 68, 0.15); color: #fca5a5;">
+            📤
+          </div>
+        </div>
+
+        <div class="metric-card glass">
+          <div class="metric-info">
+            <h4>Transfers</h4>
+            <div class="metric-value" id="metric-tra-moves" style="color: #67e8f9;">0</div>
+          </div>
+          <div class="metric-icon-box" style="background: rgba(6, 182, 212, 0.15); color: #67e8f9;">
+            🔄
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Controls -->
+      <div class="filter-bar glass">
+        <div class="filter-select-wrap">
+          <select id="ledger-type-filter" class="form-select">
+            <option value="">All Movement Types</option>
+            <option value="ADJUSTMENT">ADJUSTMENT</option>
+            <option value="RECEIPT">RECEIPT</option>
+            <option value="DELIVERY">DELIVERY</option>
+            <option value="TRANSFER">TRANSFER</option>
+          </select>
+        </div>
+
+        <div class="filter-select-wrap">
+          <select id="ledger-product-filter" class="form-select">
+            <option value="">All Products</option>
+          </select>
+        </div>
+
+        <div class="filter-select-wrap">
+          <select id="ledger-warehouse-filter" class="form-select">
+            <option value="">All Warehouses</option>
+          </select>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <input type="date" id="ledger-start-date" class="form-control" title="Start Date">
+          <span style="color: var(--text-muted);">&ndash;</span>
+          <input type="date" id="ledger-end-date" class="form-control" title="End Date">
+        </div>
+
+        <div class="filter-input-wrap">
+          <input type="text" id="ledger-search" class="form-control" placeholder="Search by SKU, product, ref, user...">
+        </div>
+
+        <button id="ledger-reset-btn" class="btn btn-secondary btn-sm" title="Clear all filters">
+          Reset Filters
+        </button>
+      </div>
+
+      <!-- Ledger Table -->
+      <div class="panel-card glass" style="padding: 0; overflow: hidden;">
+        <div class="table-wrapper" style="border: none; border-radius: 0;">
+          <table>
+            <thead>
+              <tr>
+                <th>Entry # / Ref</th>
+                <th>Movement Type</th>
+                <th>Product &amp; SKU</th>
+                <th>Warehouse / Location</th>
+                <th>Quantity Change</th>
+                <th>Stock Progression</th>
+                <th>User</th>
+                <th>Timestamp</th>
+              </tr>
+            </thead>
+            <tbody id="ledger-table-body">
+              <!-- Loaded dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: LOW STOCK & DASHBOARD METRICS -->
+    <section id="tab-lowstock" class="tab-pane">
+      
+      <!-- Metrics summary cards -->
+      <div class="metrics-grid">
+        <div class="metric-card glass">
+          <div class="metric-info">
+            <h4>In Stock Items</h4>
+            <div class="metric-value" id="metric-instock" style="color: var(--success);">0</div>
+          </div>
+          <div class="metric-icon-box" style="background: var(--success-bg); color: var(--success);">
+            ✅
+          </div>
+        </div>
+
+        <div class="metric-card glass">
+          <div class="metric-info">
+            <h4>Low Stock Items</h4>
+            <div class="metric-value" id="metric-lowstock" style="color: var(--warning);">0</div>
+          </div>
+          <div class="metric-icon-box" style="background: var(--warning-bg); color: var(--warning);">
+            ⚠️
+          </div>
+        </div>
+
+        <div class="metric-card glass">
+          <div class="metric-info">
+            <h4>Out of Stock Items</h4>
+            <div class="metric-value" id="metric-outofstock" style="color: var(--danger);">0</div>
+          </div>
+          <div class="metric-icon-box" style="background: var(--danger-bg); color: var(--danger);">
+            🚫
+          </div>
+        </div>
+
+        <div class="metric-card glass">
+          <div class="metric-info">
+            <h4>Action Required (Reorder)</h4>
+            <div class="metric-value" id="metric-reorder" style="color: #f43f5e;">0</div>
+          </div>
+          <div class="metric-icon-box" style="background: rgba(244, 63, 94, 0.15); color: #f43f5e;">
+            🔔
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Filter Bar -->
+      <div class="filter-bar glass">
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-secondary btn-sm status-filter-btn active" data-status="ALL">All Items</button>
+          <button class="btn btn-secondary btn-sm status-filter-btn" data-status="LOW_STOCK">Low Stock Only</button>
+          <button class="btn btn-secondary btn-sm status-filter-btn" data-status="OUT_OF_STOCK">Out of Stock Only</button>
+          <button class="btn btn-secondary btn-sm status-filter-btn" data-status="IN_STOCK">Healthy Stock</button>
+        </div>
+
+        <div class="filter-input-wrap" style="max-width: 320px; margin-left: auto;">
+          <input type="text" id="lowstock-search" class="form-control" placeholder="Search product, category, SKU...">
+        </div>
+      </div>
+
+      <!-- Stock Status Table -->
+      <div class="panel-card glass" style="padding: 0; overflow: hidden;">
+        <div class="table-wrapper" style="border: none; border-radius: 0;">
+          <table>
+            <thead>
+              <tr>
+                <th>Product &amp; SKU</th>
+                <th>Category</th>
+                <th>Warehouse</th>
+                <th>Current Stock Level</th>
+                <th>Reorder Threshold</th>
+                <th>Calculated Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="lowstock-table-body">
+              <!-- Loaded dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Adjustment Details Modal -->
+  <div id="adj-details-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="display: flex; align-items: center; gap: 0.5rem; font-size: 1.15rem;">
+          <span>Adjustment Details:</span>
+          <span id="modal-ref" style="color: #a5b4fc;">-</span>
+        </h3>
+        <button id="adj-modal-close" class="modal-close">&times;</button>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-item">
+          <label>Product</label>
+          <p id="modal-product">-</p>
+        </div>
+        <div class="detail-item">
+          <label>Warehouse</label>
+          <p id="modal-warehouse">-</p>
+        </div>
+        <div class="detail-item">
+          <label>Previous Recorded Stock</label>
+          <p id="modal-recorded">-</p>
+        </div>
+        <div class="detail-item">
+          <label>Physical Counted</label>
+          <p id="modal-physical">-</p>
+        </div>
+        <div class="detail-item">
+          <label>Calculated Difference</label>
+          <p id="modal-diff">-</p>
+        </div>
+        <div class="detail-item">
+          <label>Status</label>
+          <div id="modal-status">-</div>
+        </div>
+        <div class="detail-item">
+          <label>Auditor / User</label>
+          <p id="modal-user">-</p>
+        </div>
+        <div class="detail-item">
+          <label>Timestamp</label>
+          <p id="modal-time">-</p>
+        </div>
+      </div>
+
+      <div class="detail-item" style="margin-bottom: 1rem;">
+        <label>Reason / Audit Note</label>
+        <p id="modal-reason" style="background: rgba(0,0,0,0.2); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.85rem; color: #cbd5e1;">-</p>
+      </div>
+
+      <div class="detail-item">
+        <label>Traceability &bull; Ledger Link</label>
+        <div id="modal-ledger-info">-</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Toast Notifications -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="/js/api.js"></script>
+  <script src="/js/adjustments.js"></script>
+  <script src="/js/ledger.js"></script>
+  <script src="/js/lowstock.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

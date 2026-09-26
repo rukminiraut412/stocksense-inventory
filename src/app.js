@@ -1,0 +1,61 @@
+const express = require('express');
+const cors = require('cors');
+const path = require('node:path');
+const { initializeDatabase } = require('./config/database');
+
+const adjustmentRoutes = require('./modules/adjustments/adjustment.routes');
+const ledgerRoutes = require('./modules/ledger/ledger.routes');
+const lowStockRoutes = require('./modules/lowstock/lowstock.routes');
+const inventoryRoutes = require('./modules/common/inventory.routes');
+
+// Initialize database schema and baseline data
+initializeDatabase();
+
+const app = express();
+
+// Middlewares
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve static frontend files
+app.use(express.static(path.join(__dirname, '..', 'public')));
+
+// API Routes (supports both /api and /api/v1 conventions and API contract aliases)
+app.use(['/api/adjustments', '/api/v1/adjustments'], adjustmentRoutes);
+app.use(['/api/ledger', '/api/v1/ledger'], ledgerRoutes);
+app.use(['/api/stock-status', '/api/v1/stock-status', '/api/products/low-stock', '/api/v1/products/low-stock'], lowStockRoutes);
+app.use(['/api/inventory', '/api/v1/inventory'], inventoryRoutes);
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'online',
+    system: 'StockSense Inventory Management',
+    modules: ['Inventory Adjustments', 'Stock Ledger', 'Low Stock Logic'],
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Frontend Page Routes (SPA routing support)
+const indexPath = path.join(__dirname, '..', 'public', 'index.html');
+app.get(['/adjustments', '/adjustments/new', '/adjustments/:id', '/move-history', '/low-stock'], (req, res) => {
+  res.sendFile(indexPath);
+});
+
+// Fallback 404 handler for API
+app.use('/api', (req, res) => {
+  res.status(404).json({ success: false, error: 'Endpoint not found' });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('[App Error]', err);
+  const status = err.statusCode || 500;
+  res.status(status).json({
+    success: false,
+    error: err.message || 'Internal Server Error'
+  });
+});
+
+module.exports = app;

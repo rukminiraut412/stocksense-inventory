@@ -102,3 +102,107 @@ export const dashboardAPI = {
   getKPIs: (token: string) =>
     apiRequest<DashboardKPIResponse>("/dashboard/kpis", { method: "GET" }, token),
 };
+
+export interface Product {
+  id: number;
+  name: string;
+  sku: string;
+  category: string;
+  unit_of_measure: string;
+  current_stock: number;
+  initial_stock: number;
+  low_stock_threshold: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProductCreate {
+  name: string;
+  sku: string;
+  category: string;
+  unit_of_measure: string;
+  initial_stock?: number;
+  low_stock_threshold?: number;
+}
+
+export interface ProductUpdate {
+  name?: string;
+  category?: string;
+  unit_of_measure?: string;
+  sku?: string;
+  low_stock_threshold?: number;
+}
+
+export interface ReceiptItem {
+  id: number;
+  product_id: number;
+  product_name: string;
+  product_sku: string;
+  quantity: number;
+}
+
+export interface Receipt {
+  id: number;
+  receipt_number: string;
+  supplier: string;
+  status: string;
+  created_at: string;
+  validated_at?: string | null;
+  items: ReceiptItem[];
+  items_count: number;
+}
+
+export interface ReceiptCreate {
+  supplier: string;
+  items: { product_id: number; quantity: number }[];
+}
+
+export const productsAPI = {
+  list: (search?: string, token?: string | null) => {
+    const query = search ? `?search=${encodeURIComponent(search)}` : "";
+    return apiRequest<Product[]>(`/products${query}`, { method: "GET" }, token);
+  },
+  get: (id: number, token?: string | null) =>
+    apiRequest<Product>(`/products/${id}`, { method: "GET" }, token),
+  create: (payload: ProductCreate, token?: string | null) =>
+    apiRequest<Product>(
+      "/products",
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+      token
+    ),
+  update: (id: number, payload: ProductUpdate, token?: string | null) =>
+    apiRequest<Product>(
+      `/products/${id}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      },
+      token
+    ),
+  delete: (id: number, token?: string | null) =>
+    apiRequest<{ detail: string }>(`/products/${id}`, { method: "DELETE" }, token),
+};
+
+export const receiptsAPI = {
+  list: (productId?: number, token?: string | null) => {
+    const query = productId ? `?product_id=${productId}` : "";
+    return apiRequest<Receipt[]>(`/receipts${query}`, { method: "GET" }, token);
+  },
+  get: (id: number, token?: string | null) =>
+    apiRequest<Receipt>(`/receipts/${id}`, { method: "GET" }, token),
+  create: (payload: ReceiptCreate, token?: string | null) =>
+    apiRequest<Receipt>(
+      "/receipts",
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+      token
+    ),
+  validate: (id: number, token?: string | null) =>
+    apiRequest<Receipt>(`/receipts/${id}/validate`, { method: "POST" }, token),
+};
+
