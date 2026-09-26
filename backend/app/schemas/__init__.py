@@ -1,5 +1,6 @@
 from app.schemas.user import (
     UserRole,
+    UserBase,
     UserSignup,
     UserLogin,
     UserResponse,
@@ -13,9 +14,21 @@ from app.schemas.dashboard import (
     KPICardItem,
     DashboardKPIResponse,
 )
+from app.schemas.product import (
+    ProductCreate,
+    ProductUpdate,
+    ProductResponse,
+)
+from app.schemas.receipt import (
+    ReceiptCreate,
+    ReceiptItemCreate,
+    ReceiptResponse,
+    ReceiptItemResponse,
+)
 
 __all__ = [
     "UserRole",
+    "UserBase",
     "UserSignup",
     "UserLogin",
     "UserResponse",
@@ -26,4 +39,11 @@ __all__ = [
     "ResetPasswordResponse",
     "KPICardItem",
     "DashboardKPIResponse",
+    "ProductCreate",
+    "ProductUpdate",
+    "ProductResponse",
+    "ReceiptCreate",
+    "ReceiptItemCreate",
+    "ReceiptResponse",
+    "ReceiptItemResponse",
 ]

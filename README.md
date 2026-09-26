@@ -1,103 +1,86 @@
-# StockSense – Intelligent Inventory Management System
+# StockSense – Inventory Management System
 
-StockSense is an enterprise-ready, role-based Intelligent Inventory Management System built for high-throughput warehouse logistics and supply chain visibility.
+StockSense is an inventory management platform built for hackathons and production warehouses.
 
-This repository is organized for an 8-hour hackathon with 4 developers collaborating on dedicated Git branches without merge conflicts or overlapping responsibilities.
+## Team Member 2 Modules: Products & Receipts
+
+Branch: `feature/products-receipts`
+
+### Features Implemented
+1. **Products Module**:
+   - Product creation, listing, updating, deleting.
+   - Dedicated SKU / Name search.
+   - Unique SKU enforcement and non-negative initial stock validation.
+   - Auto-generated timestamps (`created_at`, `updated_at`).
+2. **Receipts Module**:
+   - Create receipts in `DRAFT` status with dynamic line items and supplier.
+   - View detailed receipts with line items.
+   - Transaction-safe receipt validation: transitions `DRAFT` → `VALIDATED`.
+   - Increases product stock (`current_stock = current_stock + received_quantity`) strictly upon validation.
+   - Prevents duplicate validations (safe against race conditions and double stock increments).
+3. **Frontend UI**:
+   - Interactive dashboard with Products and Receipts tabs.
+   - Modals for adding products, editing products, creating receipts, and viewing details.
+   - Real-time search filter and instant stock synchronization upon receipt validation.
+4. **API Contract & Tests**:
+   - Complete documentation in `docs/API_CONTRACT.md`.
+   - Comprehensive test suite in `backend/app/tests/`.
 
 ---
 
-## 👥 Team Ownership & Branching Strategy
+## Quickstart
 
-| Member | Branch | Assigned Modules & Scope |
-|---|---|---|
-| **Team Leader** (Current) | `feature/team-leader` | Project foundation, Core Database & User Model, Authentication (Signup, Login, OTP Reset, Session check), Protected Routing, Dashboard KPIs & Aggregation Interfaces, Main Layout / Navigation, Integration & Contract Testing. |
-| **Member 2** | `feature/member-2` | Products module, Receipts, Receipt stock increment. |
-| **Member 3** | `feature/member-3` | Delivery Orders, Internal Transfers, Delivery stock decrement. |
-| **Member 4** | `feature/member-4` | Inventory Adjustments, Stock Ledger / Move History, Low-stock alerts, Search & filter support. |
+### 1. Requirements
+- Python 3.10+
+- Dependencies: `pip install -r requirements.txt`
 
----
-
-## 🛠️ Tech Stack
-
-- **Frontend:** Next.js (App Router), React, TypeScript, Tailwind CSS
-- **Backend:** FastAPI, Python, SQLAlchemy, Pydantic v2
-- **Database:** PostgreSQL-ready architecture (SQLite default for instant local zero-setup execution)
-- **Security:** Bcrypt password hashing, JWT Bearer tokens, OTP reset foundation, strict role-based access control (RBAC).
-
----
-
-## 🚀 Quick Start Guide
-
-### 1. Backend Setup
-
+### 2. Start Application
 ```bash
-# Navigate to backend
-cd backend
-
-# Create virtual environment (if not already created)
-python -m venv venv
-
-# Activate virtual environment
-# Windows:
-.\venv\Scripts\activate
-# Linux/macOS:
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run FastAPI server
-uvicorn app.main:app --reload --port 8000
+python -m uvicorn backend.app.main:app --port 8000
 ```
-- API Docs (Swagger UI): [http://localhost:8000/docs](http://localhost:8000/docs)
-- Base API: [http://localhost:8000/api/v1](http://localhost:8000/api/v1)
+- Web UI: http://localhost:8000
+- Swagger API Documentation: http://localhost:8000/docs
+- Health Check: http://localhost:8000/api/health
 
-### 2. Frontend Setup
-
+### 3. Run Automated Tests
 ```bash
-# Navigate to frontend
-cd frontend
-
-# Install dependencies
-npm install
-
-# Run Next.js development server
-npm run dev
-```
-- Frontend Web App: [http://localhost:3000](http://localhost:3000)
-
-### 3. Running Backend Tests
-
-```bash
-cd backend
-.\venv\Scripts\python -m pytest tests -v
+pytest backend/app/tests -v
 ```
 
 ---
 
-## 🔒 Authentication & Role-Based Access Control
+## Project Structure
 
-The system supports two core operational roles:
-1. `inventory_manager`: Full access to warehouse configuration, approvals, and metrics.
-2. `warehouse_staff`: Dock and floor operations access.
-
-Passwords are never stored in plain text and are securely hashed using `bcrypt`. Authentication state is maintained via standard JWT Bearer tokens.
-
----
-
-## 📊 Dashboard KPI Cards
-
-The dashboard delivers real-time visibility across five critical warehouse operations:
-1. **Total Products in Stock** (Integration with Member 2)
-2. **Low Stock / Out of Stock Alerts** (Integration with Member 4)
-3. **Pending Receipts** (Integration with Member 2)
-4. **Pending Deliveries** (Integration with Member 3)
-5. **Internal Transfers Scheduled** (Integration with Member 3)
-
-*Note: Safe default/zero values are returned when teammate modules are pending integration. No misleading mock data is presented.*
-
----
-
-## 📚 Documentation
-
-- API Contract & Schemas: [`docs/API_CONTRACT.md`](docs/API_CONTRACT.md)
+```
+stocksense-inventory/
+├── backend/
+│   ├── app/
+│   │   ├── main.py              # FastAPI application & static mounts
+│   │   ├── database.py          # SQLAlchemy SQLite configuration
+│   │   ├── models/
+│   │   │   ├── product.py       # Product model
+│   │   │   └── receipt.py       # Receipt & ReceiptItem models
+│   │   ├── schemas/
+│   │   │   ├── product.py       # Pydantic schemas for Products
+│   │   │   └── receipt.py       # Pydantic schemas for Receipts
+│   │   ├── routers/
+│   │   │   ├── products.py      # Products REST endpoints
+│   │   │   └── receipts.py      # Receipts REST endpoints & validation
+│   │   └── tests/
+│   │       ├── conftest.py      # Pytest fixtures
+│   │       ├── test_products.py # Product tests
+│   │       └── test_receipts.py # Receipt & Stock Validation tests
+├── frontend/
+│   ├── index.html               # Main dashboard with tabs
+│   ├── css/styles.css           # Styling
+│   └── js/
+│       ├── api.js               # API helper
+│       ├── products.js          # Products UI
+│       └── receipts.js          # Receipts UI
+├── data/
+│   └── stocksense.db            # Persistent SQLite database
+├── docs/
+│   └── API_CONTRACT.md          # Full REST API Contract
+├── requirements.txt
+└── README.md
+```

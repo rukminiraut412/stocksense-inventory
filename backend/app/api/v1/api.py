@@ -12,9 +12,9 @@ api_router.include_router(dashboard.router)
 # Teammates can connect their routers here during integration:
 #
 # Member 2 (Products & Receipts):
-#   from app.api.v1.endpoints import products, receipts
-#   api_router.include_router(products.router, prefix="/products", tags=["Products"])
-#   api_router.include_router(receipts.router, prefix="/receipts", tags=["Receipts"])
+from app.api.v1.endpoints import products, receipts
+api_router.include_router(products.router, prefix="/products", tags=["Products"])
+api_router.include_router(receipts.router, prefix="/receipts", tags=["Receipts"])
 #
 # Member 3 (Delivery Orders & Internal Transfers):
 #   from app.api.v1.endpoints import deliveries, transfers

@@ -1,289 +1,216 @@
-# StockSense – API Contract & Architecture Specification
+# StockSense API Contract
 
-**Project:** StockSense – Intelligent Inventory Management System  
-**Version:** 1.0.0  
-**Environment Base URL:** `http://localhost:8000/api/v1`  
-**Team Leader Branch:** `feature/team-leader`
+This document specifies the REST API contract for the **Products** and **Receipts** modules of **StockSense – Inventory Management System** (Team Member 2), fully reconciled and integrated with the Team Leader Foundation.
 
----
-
-## 1. Team Ownership & Responsibilities
-
-| Role / Member | Branch Name | Owned Modules & Endpoints |
-|---|---|---|
-| **Team Leader** (Current) | `feature/team-leader` | Project foundation, Database Core & User model, Authentication (`/auth/*`), Dashboard KPIs (`/dashboard/*`), Navigation Layout, Integration. |
-| **Member 2** | `feature/member-2` | Products module (`/products/*`), Receipts (`/receipts/*`), Receipt stock increment. |
-| **Member 3** | `feature/member-3` | Delivery Orders (`/deliveries/*`), Internal Transfers (`/transfers/*`), Delivery stock decrement. |
-| **Member 4** | `feature/member-4` | Inventory Adjustments (`/adjustments/*`), Stock Ledger / Move History (`/ledger/*`), Low-Stock evaluation, Search/filter. |
+Base URL: `http://localhost:8000/api/v1` (with `/api` compatibility alias)
 
 ---
 
-## 2. Authentication Contract (Team Leader)
+## 1. Products Module
 
-All authenticated endpoints require an `Authorization` header:
-```http
-Authorization: Bearer <access_token>
-```
+### 1.1 List Products
+* **Endpoint:** `GET /products`
+* **Query Parameters:**
+  * `search` (string, optional): Case-insensitive search on SKU, product name, or category.
+* **Success Response (200 OK):**
+  ```json
+  [
+    {
+      "id": 1,
+      "name": "Standard Laptop Stand",
+      "sku": "STAND-001",
+      "category": "Accessories",
+      "unit_of_measure": "pcs",
+      "current_stock": 25.0,
+      "initial_stock": 25.0,
+      "low_stock_threshold": 10.0,
+      "created_at": "2026-09-26T04:15:30Z",
+      "updated_at": "2026-09-26T04:15:30Z"
+    }
+  ]
+  ```
 
-### 2.1 User Signup
-- **Endpoint:** `POST /auth/signup`
-- **Auth:** Public
-- **Request Body:**
-```json
-{
-  "name": "Jane Doe",
-  "email": "jane.doe@example.com",
-  "password": "SecurePassword123!",
-  "role": "inventory_manager"
-}
-```
-*Allowed roles:* `"inventory_manager"`, `"warehouse_staff"`
+### 1.2 Dedicated Product Search
+* **Endpoint:** `GET /products/search`
+* **Query Parameters:**
+  * `q` (string, required, min_length=1): Search query matching SKU or Name substring.
+* **Success Response (200 OK):** Same schema as List Products.
 
-- **Response (201 Created):**
-```json
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6...",
-  "token_type": "bearer",
-  "user": {
+### 1.3 Create Product
+* **Endpoint:** `POST /products`
+* **Request Body:**
+  ```json
+  {
+    "name": "Mechanical Keyboard",
+    "sku": "KB-001",
+    "category": "Peripherals",
+    "unit_of_measure": "pcs",
+    "initial_stock": 10.0,
+    "low_stock_threshold": 10.0
+  }
+  ```
+* **Validation Rules:**
+  * `name`: string, required, non-empty.
+  * `sku`: string, required, unique across all products.
+  * `category`: string, required, non-empty.
+  * `unit_of_measure`: string, required, non-empty.
+  * `initial_stock`: number, optional, default `0.0`, must be `>= 0`.
+  * `low_stock_threshold`: number, optional, default `10.0`, must be `>= 0`.
+* **Success Response (201 Created):** Full product object.
+* **Error Response (400 Bad Request):**
+  ```json
+  {
+    "detail": "Product with SKU 'KB-001' already exists."
+  }
+  ```
+
+### 1.4 Get Product by ID
+* **Endpoint:** `GET /products/{id}`
+* **Success Response (200 OK):** Full product object.
+* **Error Response (404 Not Found):**
+  ```json
+  {
+    "detail": "Product with ID 999 not found."
+  }
+  ```
+
+### 1.5 Update Product
+* **Endpoint:** `PUT /products/{id}`
+* **Request Body:**
+  ```json
+  {
+    "name": "Updated Keyboard Name",
+    "category": "Gaming Peripherals",
+    "unit_of_measure": "pcs",
+    "sku": "KB-001-RGB"
+  }
+  ```
+* **Success Response (200 OK):** Full updated product object.
+* **Error Response (400 Bad Request):** If new SKU collides with another product.
+
+### 1.6 Delete Product
+* **Endpoint:** `DELETE /products/{id}`
+* **Success Response (200 OK):**
+  ```json
+  {
+    "detail": "Product 1 deleted successfully."
+  }
+  ```
+
+---
+
+## 2. Receipts Module
+
+### 2.1 Create Receipt
+* **Endpoint:** `POST /receipts`
+* **Description:** Creates a goods receipt in `DRAFT` status. **Stock is NOT increased at this point.**
+* **Request Body:**
+  ```json
+  {
+    "supplier": "Acme Global Dynamics",
+    "items": [
+      {
+        "product_id": 1,
+        "quantity": 50.0
+      }
+    ]
+  }
+  ```
+* **Validation Rules:**
+  * `supplier`: string, required, non-empty.
+  * `items`: array, required, minimum 1 item.
+  * `items[].product_id`: integer, must reference an existing product.
+  * `items[].quantity`: number, strictly positive (`> 0`).
+* **Success Response (201 Created):**
+  ```json
+  {
     "id": 1,
-    "name": "Jane Doe",
-    "email": "jane.doe@example.com",
-    "role": "inventory_manager",
-    "created_at": "2026-09-26T04:45:00Z"
+    "receipt_number": "REC-20260926-0001",
+    "supplier": "Acme Global Dynamics",
+    "status": "DRAFT",
+    "created_at": "2026-09-26T04:20:00Z",
+    "validated_at": null,
+    "items_count": 1,
+    "items": [
+      {
+        "id": 1,
+        "product_id": 1,
+        "product_name": "Mechanical Keyboard",
+        "product_sku": "KB-001",
+        "quantity": 50.0
+      }
+    ]
   }
-}
-```
-- **Error Codes:**
-  - `400 Bad Request`: Email already registered.
-  - `422 Unprocessable Entity`: Invalid email format or password < 6 characters.
+  ```
+* **Error Response (400 Bad Request):**
+  ```json
+  {
+    "detail": "Product with ID 999 does not exist."
+  }
+  ```
 
----
+### 2.2 List Receipts
+* **Endpoint:** `GET /receipts`
+* **Query Parameters:**
+  * `product_id` (integer, optional): Filter receipts containing a specific product ID.
+* **Success Response (200 OK):**
+  ```json
+  [
+    {
+      "id": 1,
+      "receipt_number": "REC-20260926-0001",
+      "supplier": "Acme Global Dynamics",
+      "status": "DRAFT",
+      "created_at": "2026-09-26T04:20:00Z",
+      "validated_at": null,
+      "items_count": 1,
+      "items": [ ... ]
+    }
+  ]
+  ```
 
-### 2.2 User Login
-- **Endpoint:** `POST /auth/login`
-- **Auth:** Public
-- **Request Body:**
-```json
-{
-  "email": "jane.doe@example.com",
-  "password": "SecurePassword123!"
-}
-```
-- **Response (200 OK):**
-```json
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6...",
-  "token_type": "bearer",
-  "user": {
+### 2.3 Get Receipt Details
+* **Endpoint:** `GET /receipts/{id}`
+* **Success Response (200 OK):** Full receipt object including line items and product details.
+* **Error Response (404 Not Found):**
+  ```json
+  {
+    "detail": "Receipt with ID 999 not found."
+  }
+  ```
+
+### 2.4 Validate Receipt
+* **Endpoint:** `POST /receipts/{id}/validate` (and alias `POST /receipts/{id}/receive`)
+* **Description:** 
+  * Validates the receipt and transitions status from `DRAFT` to `VALIDATED`.
+  * Increases product current stock: `current_stock = current_stock + received_quantity`.
+  * Operates atomically within a database transaction.
+  * Strict idempotency: Duplicate validation attempts are rejected with HTTP 400 and will **never** double-increase stock.
+* **Success Response (200 OK):**
+  ```json
+  {
     "id": 1,
-    "name": "Jane Doe",
-    "email": "jane.doe@example.com",
-    "role": "inventory_manager",
-    "created_at": "2026-09-26T04:45:00Z"
+    "receipt_number": "REC-20260926-0001",
+    "supplier": "Acme Global Dynamics",
+    "status": "VALIDATED",
+    "created_at": "2026-09-26T04:20:00Z",
+    "validated_at": "2026-09-26T04:20:22Z",
+    "items_count": 1,
+    "items": [
+      {
+        "id": 1,
+        "product_id": 1,
+        "product_name": "Mechanical Keyboard",
+        "product_sku": "KB-001",
+        "quantity": 50.0
+      }
+    ]
   }
-}
-```
-- **Error Codes:**
-  - `401 Unauthorized`: Invalid email or password.
-
----
-
-### 2.3 Current User Session Check
-- **Endpoint:** `GET /auth/me`
-- **Auth:** Bearer Token required
-- **Response (200 OK):**
-```json
-{
-  "id": 1,
-  "name": "Jane Doe",
-  "email": "jane.doe@example.com",
-  "role": "inventory_manager",
-  "created_at": "2026-09-26T04:45:00Z"
-}
-```
-- **Error Codes:**
-  - `401 Unauthorized`: Expired or missing token.
-
----
-
-### 2.4 User Logout
-- **Endpoint:** `POST /auth/logout`
-- **Auth:** Bearer Token required
-- **Response (200 OK):**
-```json
-{
-  "status": "success",
-  "message": "User jane.doe@example.com successfully logged out."
-}
-```
-
----
-
-### 2.5 Forgot Password (OTP Request)
-- **Endpoint:** `POST /auth/forgot-password`
-- **Auth:** Public
-- **Request Body:**
-```json
-{
-  "email": "jane.doe@example.com"
-}
-```
-- **Response (200 OK):**
-```json
-{
-  "message": "Password reset OTP has been generated. Expires in 15 minutes.",
-  "dev_otp": "729381"
-}
-```
-*(Note: `dev_otp` is provided in development mode for easy hackathon demo without needing external email gateway).*
-
----
-
-### 2.6 Reset Password (OTP Verification)
-- **Endpoint:** `POST /auth/reset-password`
-- **Auth:** Public
-- **Request Body:**
-```json
-{
-  "email": "jane.doe@example.com",
-  "otp": "729381",
-  "new_password": "NewSecurePassword456!"
-}
-```
-- **Response (200 OK):**
-```json
-{
-  "message": "Password has been reset successfully. You can now login with your new password."
-}
-```
-- **Error Codes:**
-  - `400 Bad Request`: Invalid OTP or expired OTP.
-  - `404 Not Found`: User not found.
-
----
-
-## 3. Dashboard KPI Contract (Team Leader)
-
-### 3.1 Get Dashboard KPIs
-- **Endpoint:** `GET /dashboard/kpis`
-- **Auth:** Bearer Token required
-- **Query Parameters:**
-  - `time_range` (optional, default `"all"`): `"today"` | `"week"` | `"month"` | `"all"`
-  - `warehouse_id` (optional, integer): Filter KPIs by warehouse
-- **Response (200 OK):**
-```json
-{
-  "total_products_in_stock": {
-    "key": "total_products_in_stock",
-    "title": "Total Products in Stock",
-    "value": 0,
-    "unit": "units",
-    "status": "awaiting_module",
-    "module_owner": "Member 2",
-    "module_name": "Products",
-    "description": "Aggregated on-hand inventory count across all warehouse SKUs.",
-    "is_connected": false
-  },
-  "low_stock_out_of_stock": {
-    "key": "low_stock_out_of_stock",
-    "title": "Low Stock / Out of Stock",
-    "value": 0,
-    "unit": "alerts",
-    "status": "awaiting_module",
-    "module_owner": "Member 4",
-    "module_name": "Inventory Adjustments & Low-Stock",
-    "description": "SKUs requiring immediate replenishment attention.",
-    "is_connected": false
-  },
-  "pending_receipts": {
-    "key": "pending_receipts",
-    "title": "Pending Receipts",
-    "value": 0,
-    "unit": "orders",
-    "status": "awaiting_module",
-    "module_owner": "Member 2",
-    "module_name": "Receipts",
-    "description": "Incoming vendor deliveries waiting for dock processing.",
-    "is_connected": false
-  },
-  "pending_deliveries": {
-    "key": "pending_deliveries",
-    "title": "Pending Deliveries",
-    "value": 0,
-    "unit": "shipments",
-    "status": "awaiting_module",
-    "module_owner": "Member 3",
-    "module_name": "Delivery Orders",
-    "description": "Outbound customer orders awaiting picking and dispatch.",
-    "is_connected": false
-  },
-  "internal_transfers_scheduled": {
-    "key": "internal_transfers_scheduled",
-    "title": "Internal Transfers Scheduled",
-    "value": 0,
-    "unit": "transfers",
-    "status": "awaiting_module",
-    "module_owner": "Member 3",
-    "module_name": "Internal Transfers",
-    "description": "Relocations between warehouse bays or storage locations.",
-    "is_connected": false
-  },
-  "system_status": "StockSense Team Leader Foundation Active",
-  "timestamp": "2026-09-26T04:45:00Z",
-  "summary_counts": {
-    "total_products_in_stock": 0,
-    "low_stock_out_of_stock": 0,
-    "pending_receipts": 0,
-    "pending_deliveries": 0,
-    "internal_transfers_scheduled": 0
+  ```
+* **Duplicate Validation Error (400 Bad Request):**
+  ```json
+  {
+    "detail": "Receipt REC-20260926-0001 is already validated. Duplicate validation is not allowed."
   }
-}
-```
+  ```
 
-> **Integration Note:**  
-> When Member 2, Member 3, and Member 4 connect their database tables (`products`, `receipts`, `delivery_orders`, `internal_transfers`), `dashboard_service.py` automatically detects them and reflects real aggregated counts dynamically. Safe default values (0) are displayed when awaiting connection — NO fake data is presented.
-
----
-
-## 4. Teammate Module Endpoints (Reserved Specifications)
-
-The following routes are reserved and documented here so teammate branches can implement them without schema conflict:
-
-### 4.1 Member 2: Products & Receipts
-- **Target Router:** `backend/app/api/v1/endpoints/products.py` & `receipts.py`
-- `GET /products` — List all products with current stock
-- `POST /products` — Create new product
-- `GET /products/{id}` — Get product details
-- `GET /receipts` — List vendor receipts
-- `POST /receipts` — Create incoming receipt
-- `POST /receipts/{id}/receive` — Process receipt & increment stock
-
-### 4.2 Member 3: Delivery Orders & Internal Transfers
-- **Target Router:** `backend/app/api/v1/endpoints/deliveries.py` & `transfers.py`
-- `GET /deliveries` — List outbound delivery orders
-- `POST /deliveries` — Create delivery order
-- `POST /deliveries/{id}/dispatch` — Process delivery & decrement stock
-- `GET /transfers` — List internal warehouse transfers
-- `POST /transfers` — Schedule internal transfer
-
-### 4.3 Member 4: Adjustments, Ledger & Low-Stock
-- **Target Router:** `backend/app/api/v1/endpoints/adjustments.py` & `ledger.py`
-- `GET /adjustments` — List inventory adjustments
-- `POST /adjustments` — Post stock count reconciliation
-- `GET /ledger` — Move history & audit trail
-- `GET /products/low-stock` — SKUs below minimum reorder thresholds
-
----
-
-## 5. Shared Database Guidelines
-
-1. **Base Class:** Import from `app.core.database`:
-   ```python
-   from app.core.database import Base
-   ```
-2. **User Relationship:** If your model references `user_id`:
-   ```python
-   user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-   ```
-3. **Primary Keys:** Use autoincrementing integers or UUID strings.
-4. **Environment Variables:** Use `DATABASE_URL` configured in `app.core.config.settings.DATABASE_URL`.
