@@ -510,6 +510,33 @@ async function runTests() {
       assert.ok(Array.isArray(res.body.data.alerts));
     });
 
+    await asyncTest('Reg 7: Contract Alias GET /api/products/low-stock -> 200 OK', async () => {
+      const res = await makeRequest('/api/products/low-stock');
+      assert.strictEqual(res.status, 200);
+      assert.strictEqual(res.body.success, true);
+      assert.ok(Array.isArray(res.body.data));
+    });
+
+    await asyncTest('Reg 8: Team Leader Convention GET /api/v1/adjustments -> 200 OK', async () => {
+      const res = await makeRequest('/api/v1/adjustments');
+      assert.strictEqual(res.status, 200);
+      assert.strictEqual(res.body.success, true);
+      assert.ok(Array.isArray(res.body.data));
+    });
+
+    await asyncTest('Reg 9: Team Leader Convention GET /api/v1/ledger -> 200 OK', async () => {
+      const res = await makeRequest('/api/v1/ledger');
+      assert.strictEqual(res.status, 200);
+      assert.strictEqual(res.body.success, true);
+      assert.ok(Array.isArray(res.body.data));
+    });
+
+    await asyncTest('Reg 10: SPA Route GET /low-stock -> 200 OK', async () => {
+      const res = await makeRequest('/low-stock');
+      assert.strictEqual(res.status, 200);
+      assert.match(res.body, /StockSense/i);
+    });
+
   } finally {
     if (server) {
       server.close();

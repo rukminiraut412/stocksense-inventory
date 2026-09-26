@@ -21,11 +21,11 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static frontend files
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-// API Routes
-app.use('/api/adjustments', adjustmentRoutes);
-app.use('/api/ledger', ledgerRoutes);
-app.use('/api/stock-status', lowStockRoutes);
-app.use('/api/inventory', inventoryRoutes);
+// API Routes (supports both /api and /api/v1 conventions and API contract aliases)
+app.use(['/api/adjustments', '/api/v1/adjustments'], adjustmentRoutes);
+app.use(['/api/ledger', '/api/v1/ledger'], ledgerRoutes);
+app.use(['/api/stock-status', '/api/v1/stock-status', '/api/products/low-stock', '/api/v1/products/low-stock'], lowStockRoutes);
+app.use(['/api/inventory', '/api/v1/inventory'], inventoryRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
