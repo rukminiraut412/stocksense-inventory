@@ -161,3 +161,51 @@ def test_get_product_by_id(client):
 
     notFound_res = client.get("/api/products/999999")
     assert notFound_res.status_code == 404
+
+
+def test_create_product_empty_required_fields(client):
+    # Empty name
+    res = client.post("/api/products", json={
+        "name": "   ",
+        "sku": "SKU-EMPTY-NAME",
+        "category": "Cat",
+        "unit_of_measure": "pcs"
+    })
+    assert res.status_code == 422
+
+    # Empty SKU
+    res = client.post("/api/products", json={
+        "name": "Valid Name",
+        "sku": "   ",
+        "category": "Cat",
+        "unit_of_measure": "pcs"
+    })
+    assert res.status_code == 422
+
+
+def test_create_product_negative_low_stock_threshold(client):
+    res = client.post("/api/products", json={
+        "name": "Valid Item",
+        "sku": "SKU-NEG-THRESH",
+        "category": "Cat",
+        "unit_of_measure": "pcs",
+        "low_stock_threshold": -5.0
+    })
+    assert res.status_code == 422
+
+
+def test_delete_product(client):
+    create_res = client.post("/api/products", json={
+        "name": "Item to Delete",
+        "sku": "DEL-001",
+        "category": "Misc",
+        "unit_of_measure": "pcs"
+    })
+    prod_id = create_res.json()["id"]
+
+    del_res = client.delete(f"/api/products/{prod_id}")
+    assert del_res.status_code == 200
+
+    # Should now return 404
+    get_res = client.get(f"/api/products/{prod_id}")
+    assert get_res.status_code == 404

@@ -122,3 +122,85 @@ def test_receipt_details_and_listing(client):
     assert details["items"][0]["product_name"] == "Copper Pipe 15mm"
     assert details["items"][0]["product_sku"] == "PIPE-15"
     assert details["items"][0]["quantity"] == 25.0
+
+
+def test_receipt_validation_stock_increase_exact_calculation(client):
+    # Initial stock = 20, Receipt quantity = 50 -> Before val: 20, After val: 70
+    prod = client.post("/api/products", json={
+        "name": "Precision Sensor",
+        "sku": "SENS-020",
+        "category": "Sensors",
+        "unit_of_measure": "pcs",
+        "initial_stock": 20.0
+    }).json()
+    prod_id = prod["id"]
+    assert prod["current_stock"] == 20.0
+
+    # Create receipt
+    rec = client.post("/api/receipts", json={
+        "supplier": "SensorTech Inc",
+        "items": [{"product_id": prod_id, "quantity": 50.0}]
+    }).json()
+    rec_id = rec["id"]
+
+    # Before validation: stock = 20
+    check1 = client.get(f"/api/products/{prod_id}").json()
+    assert check1["current_stock"] == 20.0
+
+    # Validate
+    val = client.post(f"/api/receipts/{rec_id}/validate")
+    assert val.status_code == 200
+
+    # After validation: stock = 70
+    check2 = client.get(f"/api/products/{prod_id}").json()
+    assert check2["current_stock"] == 70.0
+
+    # Re-validate rejected, stock remains 70
+    reval = client.post(f"/api/receipts/{rec_id}/validate")
+    assert reval.status_code == 400
+    check3 = client.get(f"/api/products/{prod_id}").json()
+    assert check3["current_stock"] == 70.0
+
+
+def test_receipt_validation_atomic_rollback_on_failure(client, db_session):
+    # Product A (stock 10), Product B (stock 5)
+    prod_a = client.post("/api/products", json={
+        "name": "Component Alpha",
+        "sku": "COMP-ALPHA",
+        "category": "Components",
+        "unit_of_measure": "pcs",
+        "initial_stock": 10.0
+    }).json()
+
+    prod_b = client.post("/api/products", json={
+        "name": "Component Beta",
+        "sku": "COMP-BETA",
+        "category": "Components",
+        "unit_of_measure": "pcs",
+        "initial_stock": 5.0
+    }).json()
+
+    # Create multi-item receipt
+    rec = client.post("/api/receipts", json={
+        "supplier": "Multi Vendor",
+        "items": [
+            {"product_id": prod_a["id"], "quantity": 30.0},
+            {"product_id": prod_b["id"], "quantity": 15.0}
+        ]
+    }).json()
+
+    # Now delete product B from database to trigger an error during validation loop
+    client.delete(f"/api/products/{prod_b['id']}")
+
+    # Attempt to validate receipt - must fail
+    val_res = client.post(f"/api/receipts/{rec['id']}/validate")
+    assert val_res.status_code == 400
+    assert "no longer exists" in val_res.json()["detail"].lower()
+
+    # Product A stock must NOT have been incremented (atomic rollback)
+    check_a = client.get(f"/api/products/{prod_a['id']}").json()
+    assert check_a["current_stock"] == 10.0, "Product A stock must remain 10.0 due to atomic rollback"
+
+    # Receipt must remain DRAFT
+    rec_check = client.get(f"/api/receipts/{rec['id']}").json()
+    assert rec_check["status"] == "DRAFT"

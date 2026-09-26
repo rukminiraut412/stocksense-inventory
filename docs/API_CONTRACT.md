@@ -151,6 +151,8 @@ Base URL: `http://localhost:8000/api`
 
 ### 2.2 List Receipts
 * **Endpoint:** `GET /receipts`
+* **Query Parameters:**
+  * `product_id` (integer, optional): Filter receipts containing a specific product ID.
 * **Success Response (200 OK):**
   ```json
   [
