@@ -1,8 +1,8 @@
 # StockSense API Contract
 
-This document specifies the REST API contract for the **Products** and **Receipts** modules of **StockSense – Inventory Management System**.
+This document specifies the REST API contract for the **Products** and **Receipts** modules of **StockSense – Inventory Management System** (Team Member 2), fully reconciled and integrated with the Team Leader Foundation.
 
-Base URL: `http://localhost:8000/api`
+Base URL: `http://localhost:8000/api/v1` (with `/api` compatibility alias)
 
 ---
 
@@ -180,7 +180,7 @@ Base URL: `http://localhost:8000/api`
   ```
 
 ### 2.4 Validate Receipt
-* **Endpoint:** `POST /receipts/{id}/validate`
+* **Endpoint:** `POST /receipts/{id}/validate` (and alias `POST /receipts/{id}/receive`)
 * **Description:** 
   * Validates the receipt and transitions status from `DRAFT` to `VALIDATED`.
   * Increases product current stock: `current_stock = current_stock + received_quantity`.
@@ -213,3 +213,4 @@ Base URL: `http://localhost:8000/api`
     "detail": "Receipt REC-20260926-0001 is already validated. Duplicate validation is not allowed."
   }
   ```
+

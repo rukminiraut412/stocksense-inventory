@@ -1,4 +1,11 @@
-from backend.app.models.product import Product
-from backend.app.models.receipt import Receipt, ReceiptItem
+"""Shared database models package.
 
-__all__ = ["Product", "Receipt", "ReceiptItem"]
+Teammates declare models using the shared Base:
+    from app.core.database import Base
+"""
+from app.core.database import Base
+from app.models.user import User
+from app.models.product import Product
+from app.models.receipt import Receipt, ReceiptItem
+
+__all__ = ["Base", "User", "Product", "Receipt", "ReceiptItem"]

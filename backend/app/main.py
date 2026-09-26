@@ -1,54 +1,60 @@
-from pathlib import Path
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 
-from backend.app.database import engine, Base, init_db
-import backend.app.models.product  # ensures Product model registered
-import backend.app.models.receipt  # ensures Receipt & ReceiptItem models registered
+from app.core.config import settings
+from app.core.database import engine, Base
+import app.models  # Ensures User model is registered with Base
+from app.api.v1.api import api_router
 
-from backend.app.routers.products import router as products_router
-from backend.app.routers.receipts import router as receipts_router
 
-# Initialize database tables and schema migrations
-init_db()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize database tables on startup
+    Base.metadata.create_all(bind=engine)
+    yield
+
 
 app = FastAPI(
-    title="StockSense – Inventory Management System",
-    description="Backend API for StockSense Hackathon Project (Products & Receipts modules)",
-    version="1.0.0"
+    title=settings.PROJECT_NAME,
+    version=settings.VERSION,
+    description="StockSense – Intelligent Inventory Management System (Team Leader Core API Foundation)",
+    lifespan=lifespan,
 )
 
-# CORS configuration
+# CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.CORS_ORIGINS if isinstance(settings.CORS_ORIGINS, list) else [settings.CORS_ORIGINS],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include Routers
-app.include_router(products_router)
-app.include_router(receipts_router)
+# Mount API v1 router and /api alias
+app.include_router(api_router, prefix="/api/v1")
+app.include_router(api_router, prefix="/api")
 
-# Health check
-@app.get("/api/health", tags=["Health"])
+
+@app.get("/", tags=["Health"])
+def root():
+    return {
+        "system": settings.PROJECT_NAME,
+        "version": settings.VERSION,
+        "status": "online",
+        "docs_url": "/docs",
+        "api_v1_url": "/api/v1",
+    }
+
+
+@app.get("/health", tags=["Health"])
 def health_check():
-    return {"status": "ok", "system": "StockSense Inventory"}
+    return {
+        "status": "healthy",
+        "environment": settings.ENVIRONMENT,
+    }
 
-# Frontend static files mounting
-FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend"
-if FRONTEND_DIR.exists():
-    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
-    @app.get("/", include_in_schema=False)
-    @app.get("/products", include_in_schema=False)
-    @app.get("/products/new", include_in_schema=False)
-    @app.get("/products/{product_id}", include_in_schema=False)
-    @app.get("/receipts", include_in_schema=False)
-    @app.get("/receipts/new", include_in_schema=False)
-    @app.get("/receipts/{receipt_id}", include_in_schema=False)
-    def serve_frontend(product_id: str = None, receipt_id: str = None):
-        return FileResponse(FRONTEND_DIR / "index.html")
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host=settings.HOST, port=settings.PORT, reload=True)

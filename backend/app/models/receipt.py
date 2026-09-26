@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from backend.app.database import Base
+from app.core.database import Base
 
 
 def utcnow():
@@ -14,7 +14,7 @@ class Receipt(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     receipt_number = Column(String(50), unique=True, nullable=False, index=True)
     supplier = Column(String(255), nullable=False)
-    status = Column(String(20), nullable=False, default="DRAFT", index=True)
+    status = Column(String(20, collation="NOCASE"), nullable=False, default="DRAFT", index=True)
     created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
     validated_at = Column(DateTime(timezone=True), nullable=True)
 
@@ -30,4 +30,4 @@ class ReceiptItem(Base):
     quantity = Column(Float, nullable=False)
 
     receipt = relationship("Receipt", back_populates="items")
-    product = relationship("backend.app.models.product.Product")
+    product = relationship("Product")
