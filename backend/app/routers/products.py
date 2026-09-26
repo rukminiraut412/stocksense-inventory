@@ -28,13 +28,16 @@ def create_product(product_in: ProductCreate, db: Session = Depends(get_db)):
             detail="Initial stock cannot be negative."
         )
 
+    low_stock_threshold = product_in.low_stock_threshold if product_in.low_stock_threshold is not None else 10.0
+
     product = Product(
         name=product_in.name,
         sku=product_in.sku,
         category=product_in.category,
         unit_of_measure=product_in.unit_of_measure,
         initial_stock=initial_stock,
-        current_stock=initial_stock
+        current_stock=initial_stock,
+        low_stock_threshold=low_stock_threshold
     )
     db.add(product)
     db.commit()
@@ -117,6 +120,8 @@ def update_product(product_id: int, product_in: ProductUpdate, db: Session = Dep
         product.category = product_in.category
     if product_in.unit_of_measure is not None:
         product.unit_of_measure = product_in.unit_of_measure
+    if product_in.low_stock_threshold is not None:
+        product.low_stock_threshold = product_in.low_stock_threshold
 
     db.commit()
     db.refresh(product)

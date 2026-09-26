@@ -19,6 +19,7 @@ def test_create_product_success(client):
     assert data["unit_of_measure"] == "pcs"
     assert data["initial_stock"] == 25.0
     assert data["current_stock"] == 25.0
+    assert data["low_stock_threshold"] == 10.0
     assert "created_at" in data
     assert "updated_at" in data
 

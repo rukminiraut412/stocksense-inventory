@@ -23,6 +23,7 @@ Base URL: `http://localhost:8000/api`
       "unit_of_measure": "pcs",
       "current_stock": 25.0,
       "initial_stock": 25.0,
+      "low_stock_threshold": 10.0,
       "created_at": "2026-09-26T04:15:30Z",
       "updated_at": "2026-09-26T04:15:30Z"
     }
@@ -44,7 +45,8 @@ Base URL: `http://localhost:8000/api`
     "sku": "KB-001",
     "category": "Peripherals",
     "unit_of_measure": "pcs",
-    "initial_stock": 10.0
+    "initial_stock": 10.0,
+    "low_stock_threshold": 10.0
   }
   ```
 * **Validation Rules:**
@@ -53,6 +55,7 @@ Base URL: `http://localhost:8000/api`
   * `category`: string, required, non-empty.
   * `unit_of_measure`: string, required, non-empty.
   * `initial_stock`: number, optional, default `0.0`, must be `>= 0`.
+  * `low_stock_threshold`: number, optional, default `10.0`, must be `>= 0`.
 * **Success Response (201 Created):** Full product object.
 * **Error Response (400 Bad Request):**
   ```json

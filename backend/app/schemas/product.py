@@ -9,6 +9,7 @@ class ProductCreate(BaseModel):
     category: str = Field(..., min_length=1, max_length=100, description="Product category")
     unit_of_measure: str = Field(..., min_length=1, max_length=50, description="Unit of measure (e.g., pcs, kg)")
     initial_stock: Optional[float] = Field(default=0.0, ge=0.0, description="Initial stock quantity, must be >= 0")
+    low_stock_threshold: Optional[float] = Field(default=10.0, ge=0.0, description="Low stock warning threshold")
 
     @field_validator("name", "sku", "category", "unit_of_measure")
     @classmethod
@@ -24,6 +25,7 @@ class ProductUpdate(BaseModel):
     category: Optional[str] = Field(default=None, min_length=1, max_length=100)
     unit_of_measure: Optional[str] = Field(default=None, min_length=1, max_length=50)
     sku: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    low_stock_threshold: Optional[float] = Field(default=None, ge=0.0)
 
     @field_validator("name", "category", "unit_of_measure", "sku")
     @classmethod
@@ -44,6 +46,7 @@ class ProductResponse(BaseModel):
     unit_of_measure: str
     current_stock: float
     initial_stock: float
+    low_stock_threshold: float
     created_at: datetime
     updated_at: datetime
 

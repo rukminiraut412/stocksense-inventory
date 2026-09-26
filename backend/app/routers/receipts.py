@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session, joinedload
 
 from backend.app.database import get_db
@@ -95,12 +95,18 @@ def create_receipt(receipt_in: ReceiptCreate, db: Session = Depends(get_db)):
 
 
 @router.get("", response_model=List[ReceiptResponse])
-def list_receipts(db: Session = Depends(get_db)):
+def list_receipts(
+    product_id: Optional[int] = Query(None, description="Filter receipts by product ID"),
+    db: Session = Depends(get_db)
+):
     """List all receipts ordered by latest first."""
-    receipts = db.query(Receipt).options(
+    query = db.query(Receipt).options(
         joinedload(Receipt.items).joinedload(ReceiptItem.product)
-    ).order_by(Receipt.id.desc()).all()
+    )
+    if product_id is not None:
+        query = query.filter(Receipt.items.any(ReceiptItem.product_id == product_id))
 
+    receipts = query.order_by(Receipt.id.desc()).all()
     return [format_receipt_response(r) for r in receipts]
 
 

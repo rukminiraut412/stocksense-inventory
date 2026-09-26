@@ -17,5 +17,6 @@ class Product(Base):
     unit_of_measure = Column(String(50), nullable=False)
     current_stock = Column(Float, nullable=False, default=0.0)
     initial_stock = Column(Float, nullable=False, default=0.0)
+    low_stock_threshold = Column(Float, nullable=False, default=10.0)
     created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
