@@ -49,7 +49,15 @@ def get_dashboard_kpis(db: Session) -> DashboardKPIResponse:
         try:
             # If products table exists and has min_stock or reorder_level column
             columns = [col["name"] for col in inspector.get_columns("products")]
-            if "min_stock" in columns:
+            if "low_stock_threshold" in columns:
+                result = db.execute(text("SELECT COUNT(*) FROM products WHERE current_stock <= low_stock_threshold")).scalar()
+                low_stock_count = int(result or 0)
+                low_stock_connected = True
+            elif "reorder_threshold" in columns:
+                result = db.execute(text("SELECT COUNT(*) FROM products WHERE current_stock <= reorder_threshold")).scalar()
+                low_stock_count = int(result or 0)
+                low_stock_connected = True
+            elif "min_stock" in columns:
                 result = db.execute(text("SELECT COUNT(*) FROM products WHERE current_stock <= min_stock")).scalar()
                 low_stock_count = int(result or 0)
                 low_stock_connected = True
@@ -73,7 +81,7 @@ def get_dashboard_kpis(db: Session) -> DashboardKPIResponse:
     receipts_connected = False
     if "receipts" in existing_tables:
         try:
-            result = db.execute(text("SELECT COUNT(*) FROM receipts WHERE status IN ('pending', 'draft', 'in_progress')")).scalar()
+            result = db.execute(text("SELECT COUNT(*) FROM receipts WHERE UPPER(status) IN ('PENDING', 'DRAFT', 'IN_PROGRESS')")).scalar()
             pending_receipts_count = int(result or 0)
             receipts_connected = True
         except Exception:
@@ -97,7 +105,7 @@ def get_dashboard_kpis(db: Session) -> DashboardKPIResponse:
     if "delivery_orders" in existing_tables or "deliveries" in existing_tables:
         table_name = "delivery_orders" if "delivery_orders" in existing_tables else "deliveries"
         try:
-            result = db.execute(text(f"SELECT COUNT(*) FROM {table_name} WHERE status IN ('pending', 'processing', 'scheduled')")).scalar()
+            result = db.execute(text(f"SELECT COUNT(*) FROM {table_name} WHERE UPPER(status) IN ('DRAFT', 'PICKED', 'PACKED', 'PENDING', 'PROCESSING', 'SCHEDULED')")).scalar()
             pending_deliveries_count = int(result or 0)
             deliveries_connected = True
         except Exception:
@@ -121,7 +129,7 @@ def get_dashboard_kpis(db: Session) -> DashboardKPIResponse:
     if "internal_transfers" in existing_tables or "transfers" in existing_tables:
         table_name = "internal_transfers" if "internal_transfers" in existing_tables else "transfers"
         try:
-            result = db.execute(text(f"SELECT COUNT(*) FROM {table_name} WHERE status IN ('scheduled', 'pending', 'in_transit')")).scalar()
+            result = db.execute(text(f"SELECT COUNT(*) FROM {table_name} WHERE UPPER(status) IN ('DRAFT', 'SCHEDULED', 'PENDING', 'IN_TRANSIT')")).scalar()
             transfers_count = int(result or 0)
             transfers_connected = True
         except Exception:

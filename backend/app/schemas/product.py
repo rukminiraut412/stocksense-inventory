@@ -48,6 +48,6 @@ class ProductResponse(BaseModel):
     initial_stock: float
     low_stock_threshold: float
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)

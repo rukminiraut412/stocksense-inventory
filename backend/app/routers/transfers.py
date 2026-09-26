@@ -99,6 +99,36 @@ def create_warehouse(
 
 
 # ---------------------------------------------------------------------------
+# GET & POST /api/transfers/stock-levels — query & seed warehouse stock levels
+# ---------------------------------------------------------------------------
+
+@router.post("/api/transfers/stock-levels", status_code=200, tags=["Transfers"])
+def set_stock_level(
+    product_id: int,
+    warehouse_id: int,
+    quantity: float,
+    db: Session = Depends(get_db),
+):
+    """Seed or update stock level for a product in a warehouse."""
+    entry = _get_or_create_stock_level(db, product_id, warehouse_id)
+    entry.quantity = quantity
+    db.commit()
+    db.refresh(entry)
+    return {"product_id": entry.product_id, "warehouse_id": entry.warehouse_id, "quantity": entry.quantity}
+
+
+@router.get("/api/transfers/stock-levels", status_code=200, tags=["Transfers"])
+def get_stock_level(
+    product_id: int,
+    warehouse_id: int,
+    db: Session = Depends(get_db),
+):
+    """Get stock level for a product in a warehouse."""
+    entry = _get_or_create_stock_level(db, product_id, warehouse_id)
+    return {"product_id": entry.product_id, "warehouse_id": entry.warehouse_id, "quantity": entry.quantity}
+
+
+# ---------------------------------------------------------------------------
 # POST /api/transfers — create
 # ---------------------------------------------------------------------------
 
