@@ -1,27 +1,26 @@
 # Python
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-.env
-
-# Database
+*.pyc
+*.pyo
+*.pyd
 *.db
-*.sqlite
 *.sqlite3
-data/*.db
+*.sqlite
+*.egg-info/
+dist/
+build/
+.env
+.venv
+venv/
+env/
 
-# Pytest / Coverage
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Editor / OS
+# IDE
 .vscode/
 .idea/
+
+# OS
 .DS_Store
 Thumbs.db
+
+# Test artifacts
+test_results.txt
