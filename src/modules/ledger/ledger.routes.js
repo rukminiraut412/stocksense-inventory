@@ -8,4 +8,7 @@ router.get('/', LedgerController.getEntries);
 // GET /api/ledger/metrics - Get movement type breakdown metrics
 router.get('/metrics', LedgerController.getMetrics);
 
+// POST /api/ledger - Record a movement entry (inbound/outbound/transfer/adjustment)
+router.post('/', LedgerController.createEntry);
+
 module.exports = router;

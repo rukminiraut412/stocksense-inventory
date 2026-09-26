@@ -11,12 +11,16 @@ class AdjustmentService {
   static getRecordedStock(productId, warehouseId) {
     const product = db.prepare('SELECT id, name, sku FROM products WHERE id = ?').get(Number(productId));
     if (!product) {
-      throw new Error(`Product with ID ${productId} does not exist`);
+      const err = new Error(`Product with ID ${productId} does not exist`);
+      err.statusCode = 404;
+      throw err;
     }
 
     const warehouse = db.prepare('SELECT id, name, code FROM warehouses WHERE id = ?').get(Number(warehouseId));
     if (!warehouse) {
-      throw new Error(`Warehouse with ID ${warehouseId} does not exist`);
+      const err = new Error(`Warehouse with ID ${warehouseId} does not exist`);
+      err.statusCode = 404;
+      throw err;
     }
 
     const stock = db.prepare(`
@@ -81,26 +85,26 @@ class AdjustmentService {
       }
     }
 
+    // Verify product exists
+    const product = db.prepare('SELECT id, name, sku FROM products WHERE id = ?').get(pId);
+    if (!product) {
+      const err = new Error(`Product with ID ${pId} not found`);
+      err.statusCode = 404;
+      throw err;
+    }
+
+    // Verify warehouse exists
+    const warehouse = db.prepare('SELECT id, name, code FROM warehouses WHERE id = ?').get(wId);
+    if (!warehouse) {
+      const err = new Error(`Warehouse with ID ${wId} not found`);
+      err.statusCode = 404;
+      throw err;
+    }
+
     // Begin atomic transaction
     db.exec('BEGIN TRANSACTION');
 
     try {
-      // Verify product
-      const product = db.prepare('SELECT id, name, sku FROM products WHERE id = ?').get(pId);
-      if (!product) {
-        const err = new Error(`Product with ID ${pId} not found`);
-        err.statusCode = 404;
-        throw err;
-      }
-
-      // Verify warehouse
-      const warehouse = db.prepare('SELECT id, name, code FROM warehouses WHERE id = ?').get(wId);
-      if (!warehouse) {
-        const err = new Error(`Warehouse with ID ${wId} not found`);
-        err.statusCode = 404;
-        throw err;
-      }
-
       // Current recorded stock
       const stockRow = db.prepare(`
         SELECT quantity FROM stock_levels 
